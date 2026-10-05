@@ -81,6 +81,22 @@ public class TOadsSpot implements Serializable {
     @ApiModelProperty(value = "挂设档位")
     private Integer setVer;
 
+    /** 牌面安全分档 0不分档 1..4（服务端唯一裁决处给出，页面不许再算第二遍） */
+    @TableField("safe_level")
+    @ApiModelProperty(value = "牌面安全分档 0不分档 1..4")
+    private Integer safeLevel;
+
+    /** 本档照哪条判据线：固化时与 safeEffStart 同趟落库；不分档留空 */
+    @TableField("safe_rule_code")
+    @ApiModelProperty(value = "本档照哪条判据线；不分档留空")
+    private String safeRuleCode;
+
+    /** 本档所照判据线的起用那一一日（逐字固化，供日后追溯）；不分档留空 */
+    @TableField("safe_eff_start")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @ApiModelProperty(value = "本档所照判据线的起用那一一日；不分档留空")
+    private Date safeEffStart;
+
     /** 册面情形 0新入册 1已核齐 2缺项 */
     @TableField("status")
     @ApiModelProperty(value = "册面情形 0新入册 1已核齐 2缺项")
@@ -204,6 +220,30 @@ public class TOadsSpot implements Serializable {
 
     public void setSetVer(Integer setVer) {
         this.setVer = setVer;
+    }
+
+    public Integer getSafeLevel() {
+        return safeLevel;
+    }
+
+    public void setSafeLevel(Integer safeLevel) {
+        this.safeLevel = safeLevel;
+    }
+
+    public String getSafeRuleCode() {
+        return safeRuleCode;
+    }
+
+    public void setSafeRuleCode(String safeRuleCode) {
+        this.safeRuleCode = safeRuleCode;
+    }
+
+    public Date getSafeEffStart() {
+        return safeEffStart;
+    }
+
+    public void setSafeEffStart(Date safeEffStart) {
+        this.safeEffStart = safeEffStart;
     }
 
     public Integer getStatus() {

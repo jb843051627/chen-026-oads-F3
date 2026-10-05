@@ -208,6 +208,9 @@ CREATE TABLE IF NOT EXISTS t_oads_spot (
   content varchar(255) DEFAULT NULL COMMENT '随件交来的牌面题名与要件',
   set_state int DEFAULT '0' COMMENT '挂牌情形档 0未挂设 1挂设在册 2整块拆除（只有核准单封存才许挪）',
   set_ver int DEFAULT '0' COMMENT '挂设档位 挂上去或改位置封存一次加一；拆除不进位',
+  safe_level int DEFAULT '0' COMMENT '牌面安全分档 0不分档 1..4（服务端唯一裁决处给出，页面不许再算）',
+  safe_rule_code varchar(64) DEFAULT NULL COMMENT '本档照哪条判据线：固化时与 safe_eff_start 同趟落库；不分档留空',
+  safe_eff_start datetime DEFAULT NULL COMMENT '本档所照判据线的起用那一一日（逐字固化，供日后追溯）；不分档留空',
   status int DEFAULT NULL COMMENT '册面情形 0新入册 1已核齐 2缺项',
   del_flag int DEFAULT '0' COMMENT '删除标记 0正常 1删除',
   create_by varchar(64) DEFAULT NULL COMMENT '创建者',
@@ -215,8 +218,28 @@ CREATE TABLE IF NOT EXISTS t_oads_spot (
   update_by varchar(64) DEFAULT NULL COMMENT '更新者',
   update_time datetime DEFAULT NULL COMMENT '更新时间',
   remark varchar(500) DEFAULT NULL COMMENT '备注',
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  KEY idx_spot_safe_rule (safe_rule_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='点位底册';
+
+-- 牌面安全分档留痕：一次判定一行，只许追加不许改。固化进点位那一行的三列与这一行同生
+-- （同一事务），固化的判据线代号与起用那一一日逐字照抄本次裁决给出的那一对。
+-- 不分档也要留痕：level=0 时 rule_code/eff_start 留空，日后能追出这一处当时为何没挂提醒。
+CREATE TABLE IF NOT EXISTS t_oads_safety_record (
+  id bigint NOT NULL COMMENT '主键',
+  spot_id bigint NOT NULL COMMENT '点位底册行',
+  spot_no varchar(64) DEFAULT NULL COMMENT '点位码（判定当时自点位主档冗余）',
+  rule_code varchar(64) DEFAULT NULL COMMENT '本次照哪条判据线（与固化进点位的那一对逐字相同）；不分档留空',
+  eff_start datetime DEFAULT NULL COMMENT '该判据线起用那一一日（逐字固化）；不分档留空',
+  safe_level int NOT NULL COMMENT '本次落档 0不分档 1..4',
+  conv_score decimal(12,2) DEFAULT NULL COMMENT '本次比对用的折算分（已按两位小数四舍五入取齐）',
+  judged_at datetime(3) NOT NULL COMMENT '本次询问时刻（按此刻生效版本判，旧批按各自提交当时版本判）',
+  quarter_code varchar(8) DEFAULT NULL COMMENT '本次所属季度码 如2026Q4',
+  create_by varchar(64) DEFAULT NULL COMMENT '创建者',
+  create_time datetime DEFAULT NULL COMMENT '创建时间',
+  PRIMARY KEY (id),
+  KEY idx_safety_spot_time (spot_id, judged_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='牌面安全分档判定留痕（append-only）';
 
 -- 初始档案数据（t_oads_area_book 预置两条段册种子）
 -- area_id=0 为在册段册（主干道类），area_id=1 为已撤出的旧段册（次干道类），供挂接校验与新入册校验取用。
