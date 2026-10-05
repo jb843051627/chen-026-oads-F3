@@ -202,12 +202,16 @@ CREATE TABLE IF NOT EXISTS t_oads_spot (
   area_id int DEFAULT NULL COMMENT '挂在哪一段册名下',
   area_no varchar(64) DEFAULT NULL COMMENT '段册代号（冗余自段册）',
   set_no varchar(64) DEFAULT NULL COMMENT '设置主体代号或承办岗代号',
+  rule_code varchar(64) DEFAULT NULL COMMENT '点位挂着的判据线代号（区级配置；按标识取值入口照它问，空着的只走整表取优）',
   need_num int DEFAULT NULL COMMENT '核定应设处数',
   got_num int DEFAULT NULL COMMENT '已核验落地处数',
   lack_num int DEFAULT NULL COMMENT '还差几处（轧出来，不手填）',
   content varchar(255) DEFAULT NULL COMMENT '随件交来的牌面题名与要件',
   set_state int DEFAULT '0' COMMENT '挂牌情形档 0未挂设 1挂设在册 2整块拆除（只有核准单封存才许挪）',
   set_ver int DEFAULT '0' COMMENT '挂设档位 挂上去或改位置封存一次加一；拆除不进位',
+  safe_level int DEFAULT '0' COMMENT '牌面安全分档 0不分档 1..4（服务端一处区间比对给出，页面不再算第二遍）',
+  safe_rule_code varchar(64) DEFAULT NULL COMMENT '本轮固化的判据线代号（不分档留空，逐字照抄当次采信那一条）',
+  safe_eff_start datetime DEFAULT NULL COMMENT '本轮固化的起用那一一日（不分档留空，与代号同一对，逐字相同）',
   status int DEFAULT NULL COMMENT '册面情形 0新入册 1已核齐 2缺项',
   del_flag int DEFAULT '0' COMMENT '删除标记 0正常 1删除',
   create_by varchar(64) DEFAULT NULL COMMENT '创建者',
@@ -217,6 +221,32 @@ CREATE TABLE IF NOT EXISTS t_oads_spot (
   remark varchar(500) DEFAULT NULL COMMENT '备注',
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='点位底册';
+
+-- 牌面安全分档固化留痕：一次判定一行，只许追加。固化（改点位行）与留痕（加这一行）须同一个事务，
+-- 成则同成、败则同回。固化进点位行的判据线代号与起用那一日，与本行这一对逐字相同。
+CREATE TABLE IF NOT EXISTS t_oads_spot_grade_log (
+  id bigint NOT NULL COMMENT '主键',
+  spot_id bigint NOT NULL COMMENT '哪一处点位',
+  spot_no varchar(64) DEFAULT NULL COMMENT '点位码（判定当时冗余）',
+  score decimal(12,3) DEFAULT NULL COMMENT '本次询问使用的折算分（原始取值，0..100）',
+  score_aligned decimal(12,2) DEFAULT NULL COMMENT '两位小数四舍五入取齐后的折算分',
+  safe_level int NOT NULL COMMENT '落定档位 0不分档 1..4',
+  rule_code varchar(64) DEFAULT NULL COMMENT '采信那一条的判据线代号（不分档留空）',
+  rule_id bigint DEFAULT NULL COMMENT '采信那一条的主键（不分档留空）',
+  eff_start datetime DEFAULT NULL COMMENT '采信那一条的起用那一一日（不分档留空，逐字照抄）',
+  ask_at datetime NOT NULL COMMENT '本次询问时刻（按提交当时生效版本判，不按此刻最新版）',
+  grade_msg varchar(500) DEFAULT NULL COMMENT '这一处给的说法（采信谁/为何不分档）',
+  create_by varchar(64) DEFAULT NULL COMMENT '创建者',
+  create_time datetime DEFAULT NULL COMMENT '创建时间',
+  PRIMARY KEY (id),
+  KEY idx_grade_log_spot (spot_id, ask_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='牌面安全分档固化留痕（append-only）';
+
+-- 老库升级（CREATE TABLE IF NOT EXISTS 不会补列，已建过 t_oads_spot 的库手跑这四句）：
+-- ALTER TABLE t_oads_spot ADD COLUMN rule_code varchar(64) DEFAULT NULL COMMENT '点位挂着的判据线代号（区级配置）' AFTER set_no;
+-- ALTER TABLE t_oads_spot ADD COLUMN safe_level int DEFAULT '0' COMMENT '牌面安全分档 0不分档 1..4' AFTER set_ver;
+-- ALTER TABLE t_oads_spot ADD COLUMN safe_rule_code varchar(64) DEFAULT NULL COMMENT '本轮固化的判据线代号（不分档留空）' AFTER safe_level;
+-- ALTER TABLE t_oads_spot ADD COLUMN safe_eff_start datetime DEFAULT NULL COMMENT '本轮固化的起用那一一日（不分档留空）' AFTER safe_rule_code;
 
 -- 初始档案数据（t_oads_area_book 预置两条段册种子）
 -- area_id=0 为在册段册（主干道类），area_id=1 为已撤出的旧段册（次干道类），供挂接校验与新入册校验取用。

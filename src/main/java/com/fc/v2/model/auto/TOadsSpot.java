@@ -51,6 +51,11 @@ public class TOadsSpot implements Serializable {
     @ApiModelProperty(value = "设置主体代号或承办岗代号")
     private String setNo;
 
+    /** 点位挂着的判据线代号（区级配置；按标识取值入口照它问，空着的只走整表取优） */
+    @TableField("rule_code")
+    @ApiModelProperty(value = "点位挂着的判据线代号（区级配置）")
+    private String ruleCode;
+
     /** 核定应设处数 */
     @TableField("need_num")
     @ApiModelProperty(value = "核定应设处数")
@@ -80,6 +85,22 @@ public class TOadsSpot implements Serializable {
     @TableField("set_ver")
     @ApiModelProperty(value = "挂设档位")
     private Integer setVer;
+
+    /** 牌面安全分档 0不分档 1..4（服务端一处区间比对给出，页面不再算第二遍） */
+    @TableField("safe_level")
+    @ApiModelProperty(value = "牌面安全分档 0不分档 1..4")
+    private Integer safeLevel;
+
+    /** 本轮固化的判据线代号（不分档留空，逐字照抄当次采信那一条） */
+    @TableField("safe_rule_code")
+    @ApiModelProperty(value = "本轮固化的判据线代号（不分档留空）")
+    private String safeRuleCode;
+
+    /** 本轮固化的起用那一一日（不分档留空，与代号同一对，逐字相同） */
+    @TableField("safe_eff_start")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @ApiModelProperty(value = "本轮固化的起用那一一日（不分档留空）")
+    private Date safeEffStart;
 
     /** 册面情形 0新入册 1已核齐 2缺项 */
     @TableField("status")
@@ -158,6 +179,14 @@ public class TOadsSpot implements Serializable {
         this.setNo = setNo;
     }
 
+    public String getRuleCode() {
+        return ruleCode;
+    }
+
+    public void setRuleCode(String ruleCode) {
+        this.ruleCode = ruleCode;
+    }
+
     public Integer getNeedNum() {
         return needNum;
     }
@@ -204,6 +233,30 @@ public class TOadsSpot implements Serializable {
 
     public void setSetVer(Integer setVer) {
         this.setVer = setVer;
+    }
+
+    public Integer getSafeLevel() {
+        return safeLevel;
+    }
+
+    public void setSafeLevel(Integer safeLevel) {
+        this.safeLevel = safeLevel;
+    }
+
+    public String getSafeRuleCode() {
+        return safeRuleCode;
+    }
+
+    public void setSafeRuleCode(String safeRuleCode) {
+        this.safeRuleCode = safeRuleCode;
+    }
+
+    public Date getSafeEffStart() {
+        return safeEffStart;
+    }
+
+    public void setSafeEffStart(Date safeEffStart) {
+        this.safeEffStart = safeEffStart;
     }
 
     public Integer getStatus() {
